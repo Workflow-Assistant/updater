@@ -3,11 +3,8 @@
 
 #include <iostream>
 #include <fstream>
-#include <Windows.h>
 
 #include <QApplication>
-#include <QFile>
-#include <QDir>
 #include <QProcess>
 
 using namespace std;
@@ -27,17 +24,11 @@ Updater::Updater(std::unique_ptr<VersionComparator> comparator, QWidget *parent)
 Updater::~Updater()
 {}
 
-static bool launchProgram(const string& path) {
-    STARTUPINFO si = { sizeof(si) };
-    PROCESS_INFORMATION pi;
-    return CreateProcess(path.c_str(), NULL, NULL, NULL,
-        FALSE, 0, NULL, NULL, &si, &pi);
-}
-
-static string readLocalVersion(const string& path) {
+static int readLocalVersion(const string& path) {
     ifstream file(path);
     string version;
-    return getline(file, version) ? version : "0.0.0";
+    if (!file.is_open()) return 0;
+    return getline(file, version) ? stoi(version) : 0;
 }
 
 static void writeLocalVersion(const string& path, const string& version) {
@@ -45,75 +36,61 @@ static void writeLocalVersion(const string& path, const string& version) {
 }
 
 bool Updater::performUpdate() {
-    string localVer = readLocalVersion(localVersionFile);
-    string remoteVer = getRemoteVersion();
+    // 取服务器版本信息
+    if (!getRemoteVersion()) {
+        return false;
+    }
+    assert(!mainProgram.empty() && "Main program path is empty");
+    assert(!remoteInstallerVersion.empty() && "Remote installer version is empty");
+    assert((remotehotfixVersion != -1) && "Remote hotfix version is empty");
 
-    if(comparator->isNewer(remoteUpdaterVersion, currentUpdaterVersion)) {
-		if (!selfUpdate()) {
-			qDebug() << "Self-update failed";
-			return false;
-		}
-	}
 
-    if (!comparator->isNewer(remoteVer, localVer)) {
-        qDebug() << "Already up to date";
+    // 第一阶段 大版本安装包更新
+    // 检查大版本更新
+    if (comparator->isNewer(remoteInstallerVersion, installerVersion)) {
+        qDebug() << "New installer version available: "
+            << QString::fromStdString(remoteInstallerVersion)
+            << " (local: " << QString::fromStdString(installerVersion) << ")";
+
+        // 下载并应用安装包更新
+        if (!applyInstaller()) {
+            qDebug() << "Failed to apply installer update.";
+            return false;
+        }
+        return true;
+    }
+
+    else {
+        qDebug() << "No new installer version available, checking hotfix...";
+    }
+
+    // 第二阶段 热更新自动文件替换
+    // 读取本地 hotfix版本号
+    int localhotfixVersion = readLocalVersion(hotfixVersionFile);
+
+    if (remotehotfixVersion <= localhotfixVersion) {
+        qDebug() << "No new hotfix version available: "
+            << remotehotfixVersion
+            << " (local: " << localhotfixVersion << ")";
         return launchMainProgram();
     }
 
     // 获取文件列表
-    if (fileList.empty()) return false;
-
-    // 下载并更新文件
-    for (const auto& file : fileList) {
-        if (!downloadNewVersion(file) || !applyUpdate(file)) {
-            return false;
+    if (!hotfixFileList.empty()) {
+        // 下载并更新文件
+        for (const auto& file : hotfixFileList) {
+            if (!downloadNewVersion(file) || !applyUpdate(file)) {
+                return false;
+            }
         }
+        // 更新本地 hotfix 版本号
+        writeLocalVersion(hotfixVersionFile, to_string(remotehotfixVersion));
     }
 
-    writeLocalVersion(localVersionFile, remoteVer);
     return launchMainProgram();
 }
 
-bool Updater::selfUpdate() {
-    FileInfo selfUpdateFile;
-    selfUpdateFile.filename = "updater.exe";
-    selfUpdateFile.hash = updaterHash;
-    if (!downloadNewVersion(selfUpdateFile)) {
-		qDebug() << "Failed to download self-update file";
-		return false;
-	}
-    QString appPath = QApplication::applicationDirPath();
-    QString scriptPath = appPath + "/update_helper.bat";
-    QFile scriptFile(scriptPath);
-    if (scriptFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&scriptFile);
-        out.setCodec("IBM 850"); // 设置正确的编码以处理路径中的非ASCII字符
-
-        out << "@echo off\n";
-        // 1. 等待2秒，确保主程序完全退出
-        out << "timeout /t 10 /nobreak > NUL\n";
-        // 2. 覆盖旧文件 (move /Y 会强制覆盖)
-        out << "move /Y \"updater.exe.tmp\" \"updater.exe\"\n";
-        // 3. 重新启动更新后的程序
-        out << "start \"\" \"updater.exe\"\n";
-        // 4. 删除自己 (脚本)
-        out << "del \"" << QDir::toNativeSeparators(scriptPath) << "\"\n";
-
-        scriptFile.close();
-
-        // 使用分离模式启动脚本，这样即使主程序退出，脚本也能继续运行
-        QProcess::startDetached("cmd.exe", { "/C", QDir::toNativeSeparators(scriptPath) });
-
-        // 关键：立即退出当前程序
-        exit(0);
-    }
-    else {
-		qDebug() << "Failed to create update script: " << scriptPath;
-		return false;
-	}
-}
-
-string Updater::getRemoteVersion() {
+bool Updater::getRemoteVersion() {
     // 获取远程版本信息
     HTTPRequest request(HTTP_GET, baseUrl + "/api/updater/version");
     request.SimpleDebug();
@@ -121,62 +98,67 @@ string Updater::getRemoteVersion() {
     response.SimpleDebug();
 
     if (response.is_Status_200()) {
-		QJsonObject res_json = response.get_payload_QJsonObject();
+        QJsonObject res_json = response.get_payload_QJsonObject();
 
         this->mainProgram = res_json["main_program"].toString().toStdString();
+
+        this->remoteInstallerVersion = res_json["version"].toString().toStdString();
+        this->installerHash = res_json["hash"].toString().toStdString();
+
+        this->remotehotfixVersion = res_json["hotfix"].toString().toInt();
         for (const auto& file : res_json["files"].toArray()) {
-			FileInfo fileInfo;
-			fileInfo.filename = file.toObject()["filename"].toString().toStdString();
-			fileInfo.hash = file.toObject()["hash"].toString().toStdString();
-			this->fileList.push_back(fileInfo);
-		}
-        
-        remoteUpdaterVersion = res_json["updater_version"].toString().toStdString();
-        updaterHash = res_json["updater_hash"].toString().toStdString();
-		return res_json["version"].toString().toStdString();
-	}
-	else {
-		qDebug() << "Failed to get remote version: " << response.status_code;
-		return "0.0.0"; // 返回默认版本
-	}
+            FileInfo fileInfo;
+            fileInfo.filename = file.toObject()["filename"].toString().toStdString();
+            fileInfo.hash = file.toObject()["hash"].toString().toStdString();
+            this->hotfixFileList.push_back(fileInfo);
+        }
+        return true;
+    }
+    else {
+        qDebug() << "Failed to get remote version: " << response.status_code;
+        return false;
+    }
 }
 
 bool Updater::downloadNewVersion(const FileInfo& file) {
     string tempFile = file.filename + ".tmp";
     QString url = baseUrl + "/updater/" + QString::fromStdString(file.filename);
     HTTPRequest request(HTTP_GET, url);
+    request.set_headers({
+        {"Authorization", "Basic YmpmdTpiamZ1"}
+        });
     request.SimpleDebug();
     HTTPResponse response = HTTPClient::getInstance().send(request);
     response.SimpleDebug();
 
     if (!response.is_Status_200()) {
-		qDebug() << "Failed to download file: " << QString::fromStdString(file.filename) 
-			 << response.status_code << " " << response.reason_phrase;
-		return false;
-	}
+        qDebug() << "Failed to download file: " << QString::fromStdString(file.filename)
+            << response.status_code << " " << response.reason_phrase;
+        return false;
+    }
 
     // 验证文件哈希
     QString temp_hash = QCryptographicHash::hash(
         response.get_payload_ByteArray(), QCryptographicHash::Md5
     ).toHex();
     if (temp_hash != QString::fromStdString(file.hash)) {
-		qDebug() << "Hash mismatch for file: " << QString::fromStdString(file.filename)
-				 << "Expected: " << QString::fromStdString(file.hash)
-				 << "Got: " << temp_hash;
-		return false;
-	}
+        qDebug() << "Hash mismatch for file: " << QString::fromStdString(file.filename)
+            << "Expected: " << QString::fromStdString(file.hash)
+            << "Got: " << temp_hash;
+        return false;
+    }
 
-	// 保存文件
-	ofstream outFile(tempFile, ios::binary);
-	if (!outFile) {
-		qDebug() << "Failed to open file for writing: " << QString::fromStdString(file.filename);
-		return false;
-	}
-	outFile.write(response.get_payload_ByteArray().data(), response.get_payload_ByteArray().size());
-	outFile.close();
+    // 保存文件
+    ofstream outFile(tempFile, ios::binary);
+    if (!outFile) {
+        qDebug() << "Failed to open file for writing: " << QString::fromStdString(file.filename);
+        return false;
+    }
+    outFile.write(response.get_payload_ByteArray().data(), response.get_payload_ByteArray().size());
+    outFile.close();
 
     qDebug() << "Downloaded and verified: " << QString::fromStdString(file.filename);
-	return true;
+    return true;
 }
 
 bool Updater::applyUpdate(const FileInfo& file) {
@@ -208,10 +190,57 @@ bool Updater::applyUpdate(const FileInfo& file) {
 }
 
 bool Updater::launchMainProgram() {
-    if (!launchProgram(mainProgram)) {
-        qDebug() << "Failed to launch program";
+    if (!QProcess::startDetached(QString::fromStdString(mainProgram), QStringList())) {
+        qDebug() << "Failed to launch main program: " << QString::fromStdString(mainProgram);
         return false;
     }
+    return true;
+}
+
+bool Updater::applyInstaller() {
+    // 下载安装包
+    QString installer_name = "iNE_Setup_" + QString::fromStdString(remoteInstallerVersion) + ".exe";
+    QString url = baseUrl + "/updater/" + installer_name;
+
+    HTTPRequest request(HTTP_GET, url);
+    request.set_headers({
+        {"Authorization", "Basic YmpmdTpiamZ1"}
+        });
+    request.SimpleDebug();
+
+    HTTPResponse response = HTTPClient::getInstance().send(request);
+    response.SimpleDebug();
+
+    if (!response.is_Status_200()) {
+        qDebug() << "Failed to download installer: " << response.status_code << " " << response.reason_phrase;
+        return false;
+    }
+
+    // 验证安装包哈希
+    QString temp_hash = QCryptographicHash::hash(
+        response.get_payload_ByteArray(), QCryptographicHash::Md5
+    ).toHex();
+    if (temp_hash != QString::fromStdString(installerHash)) {
+        qDebug() << "Installer hash mismatch: expected " << QString::fromStdString(installerHash)
+            << ", got " << temp_hash;
+        return false;
+    }
+
+    // 保存安装包到临时文件
+    string path = installer_name.toStdString();
+    ofstream outFile(path, ios::binary);
+    if (!outFile) {
+        qDebug() << "Failed to open installer file for writing: " << QString::fromStdString(path);
+        return false;
+    }
+    outFile.write(response.get_payload_ByteArray().data(), response.get_payload_ByteArray().size());
+    outFile.close();
+
+    if (!QProcess::startDetached(installer_name, QStringList())) {
+        qDebug() << "Failed to launch installer: " << QString::fromStdString(path);
+        return false;
+    }
+    qDebug() << "Installer launched successfully: " << QString::fromStdString(path);
     return true;
 }
  

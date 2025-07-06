@@ -33,21 +33,25 @@ private:
     std::unique_ptr<VersionComparator> comparator;
 
     std::string mainProgram;
-    std::vector<FileInfo> fileList;
 
-    const std::string localVersionFile = "version";
     const QString baseUrl = "http://localhost:8000";
 
-    bool selfUpdate();
-    std::string currentUpdaterVersion = "0.0.1";
-    std::string remoteUpdaterVersion = currentUpdaterVersion;
-    std::string updaterHash;
+    // 需要安装包更新的大版本号
+    const std::string installerVersion = "0.0.3";
+    std::string remoteInstallerVersion;
+    std::string installerHash;
 
-    std::string getRemoteVersion();
+    // 热更新 hotfix 版本文件
+    const std::string hotfixVersionFile = "version";
+    int remotehotfixVersion = -1;
+    std::vector<FileInfo> hotfixFileList;
+
+    bool getRemoteVersion();
 
     bool downloadNewVersion(const FileInfo& file);
     bool applyUpdate(const FileInfo& file);
 
     bool launchMainProgram();
+    bool applyInstaller();
 };
 
