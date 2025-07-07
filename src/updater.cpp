@@ -14,10 +14,12 @@ Updater::Updater(std::unique_ptr<VersionComparator> comparator, QWidget *parent)
 {
     setWindowTitle("Workflow Updater");
     setFixedSize(400, 300);
+    qDebug() << "Starting update process...";
 
     if (!performUpdate()) {
         qDebug() << "Update process failed";
     }
+   qDebug() << "Update process completed successfully, exiting application.";
     exit(0); // 直接退出应用程序
 }
 
@@ -85,6 +87,8 @@ bool Updater::performUpdate() {
         }
         // 更新本地 hotfix 版本号
         writeLocalVersion(hotfixVersionFile, to_string(remotehotfixVersion));
+        qDebug() << "Hotfix update applied successfully, new version: "
+			<< remotehotfixVersion;
     }
 
     return launchMainProgram();
