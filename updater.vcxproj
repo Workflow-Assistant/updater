@@ -21,6 +21,7 @@
     <QtMoc Include="src\updater.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\versionComparator.h" />
   </ItemGroup>
   <ItemGroup>
@@ -28,6 +29,12 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\updater.cpp" />
     <ClCompile Include="src\versionComparator.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="updater.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resource\favicon.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{87D641F6-89E6-4737-A50A-40EB89B90A9D}</ProjectGuid>
