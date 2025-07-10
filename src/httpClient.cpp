@@ -1,4 +1,4 @@
-#include "httpClient.h"
+ï»¿#include "httpClient.h"
 
 #include <QtCore/QEventLoop>
 
@@ -10,7 +10,7 @@ HTTPClient::HTTPClient(QObject* parent_object)
 }
 
 HTTPResponse HTTPClient::send(HTTPRequest& request) {
-	// ·¢ËÍÇëÇó
+	// å‘é€è¯·æ±‚
 	QNetworkReply* q_reply = nullptr;
 	switch (request.http_method_type)
 	{
@@ -28,37 +28,37 @@ HTTPResponse HTTPClient::send(HTTPRequest& request) {
 		break;
 	}
 
-	// »ñÈ¡ÏìÓ¦
+	// è·å–å“åº”
 	HTTPResponse response;
-	if (q_reply != nullptr) {	// ÕâÀïÅĞÒ»ÏÂnullptrÖ»ÊÇÎªÁË²»ÈÃIDE±¨¾¯¸æ
+	if (q_reply != nullptr) {	// è¿™é‡Œåˆ¤ä¸€ä¸‹nullptråªæ˜¯ä¸ºäº†ä¸è®©IDEæŠ¥è­¦å‘Š
 
-		// Í¬²½×èÈû£¬µÈ´ıÒì²½ÇëÇóÍê³É
+		// åŒæ­¥é˜»å¡ï¼Œç­‰å¾…å¼‚æ­¥è¯·æ±‚å®Œæˆ
 		QEventLoop loop;
 		QObject::connect(q_reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
 		loop.exec();
 
-		// ÏìÓ¦ĞÅÏ¢ÌáÈ¡
+		// å“åº”ä¿¡æ¯æå–
 		response = HTTPResponse(*q_reply);
 		q_reply->deleteLater();
 	}
 
-	// HttpÏìÓ¦ÓĞĞ§£¬µ«×´Ì¬Âë²»ÊÇ2xx
+	// Httpå“åº”æœ‰æ•ˆï¼Œä½†çŠ¶æ€ç ä¸æ˜¯2xx
 	if (!response.is_Status_2xx()) {
 
-		// ´òÓ¡ ×´Ì¬Âë(http) ºÍ ÌáÊ¾¶ÌÓï(http)
-		qDebug() << "·şÎñÆ÷httpÏìÓ¦Òì³££º";
-		qDebug() << "×´Ì¬Âë£º" << response.status_code
-			<< "ÌáÊ¾¶ÌÓï£º" << response.reason_phrase;
+		// æ‰“å° çŠ¶æ€ç (http) å’Œ æç¤ºçŸ­è¯­(http)
+		qDebug() << "æœåŠ¡å™¨httpå“åº”å¼‚å¸¸ï¼š";
+		qDebug() << "çŠ¶æ€ç ï¼š" << response.status_code
+			<< "æç¤ºçŸ­è¯­ï¼š" << response.reason_phrase;
 	}
 
 	return response;
 }
 
 
-// HTTPRequest ¹¹Ôìº¯Êı
+// HTTPRequest æ„é€ å‡½æ•°
 HTTPRequest::HTTPRequest(HTTPMethodType http_method, QString url, bool use_default_headers)
 {
-	// httpÇëÇóÅäÖÃ³õÊ¼»¯
+	// httpè¯·æ±‚é…ç½®åˆå§‹åŒ–
 	this->http_method_type = http_method;
 	this->url = url;
 
@@ -69,28 +69,28 @@ HTTPRequest::HTTPRequest(HTTPMethodType http_method, QString url, bool use_defau
 		this->headers = QHash<QString, QString>();
 	}
 
-	// ·¢ËÍ²ÎÊı/ÄÚÈİ³õÊ¼»¯ÖÃ¿Õ
+	// å‘é€å‚æ•°/å†…å®¹åˆå§‹åŒ–ç½®ç©º
 	this->url_args = QHash<QString, QString>();
 	this->payload = QByteArray();
 }
 
-// HTTPResponse ¹¹Ôìº¯Êı
+// HTTPResponse æ„é€ å‡½æ•°
 HTTPResponse::HTTPResponse()
 {
-	// ËùÓĞÖµ³õÊ¼»¯ÎªÄ¬ÈÏ
+	// æ‰€æœ‰å€¼åˆå§‹åŒ–ä¸ºé»˜è®¤
 	this->use_default();
 }
 
 HTTPResponse::HTTPResponse(QNetworkReply& reply)
 {
-	// ËùÓĞÖµ³õÊ¼»¯ÎªÄ¬ÈÏ
+	// æ‰€æœ‰å€¼åˆå§‹åŒ–ä¸ºé»˜è®¤
 	this->use_default();
 
-	// ÌáÈ¡Qt²ãµÄ´íÎóĞÅÏ¢
-	this->error_code = reply.error();	// Õı³£Ó¦Îª QNetworkReply::NetworkError::NoError
+	// æå–Qtå±‚çš„é”™è¯¯ä¿¡æ¯
+	this->error_code = reply.error();	// æ­£å¸¸åº”ä¸º QNetworkReply::NetworkError::NoError
 	this->error_string = reply.errorString();
 
-	// ÌáÈ¡HttpĞÅÏ¢£¬¾ÍËãHttpÃ»·¢³öÈ¥»òÕßÃ»ÊÕµ½£¬Ò²ÄÜ·ÅĞÄÌá£¬²»»á±¨´íµÄ
+	// æå–Httpä¿¡æ¯ï¼Œå°±ç®—Httpæ²¡å‘å‡ºå»æˆ–è€…æ²¡æ”¶åˆ°ï¼Œä¹Ÿèƒ½æ”¾å¿ƒæï¼Œä¸ä¼šæŠ¥é”™çš„
 	this->status_code = reply.attribute(QNetworkRequest::Attribute::HttpStatusCodeAttribute).toInt();
 	this->reason_phrase = reply.attribute(QNetworkRequest::Attribute::HttpReasonPhraseAttribute).toString();
 	for (QNetworkReply::RawHeaderPair header_pair : reply.rawHeaderPairs()) {

@@ -29,6 +29,9 @@
     <QtMoc Include="src\updater.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="src\updaterUI.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\versionComparator.h">
@@ -51,6 +54,9 @@
     <ClCompile Include="src\versionComparator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\updaterUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="updater.rc">
@@ -61,5 +67,10 @@
     <Image Include="resource\favicon.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resource\Resource.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
   </ItemGroup>
 </Project>

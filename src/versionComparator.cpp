@@ -1,4 +1,4 @@
-#include "versionComparator.h"
+ï»¿#include "versionComparator.h"
 
 #include <iostream>
 
@@ -30,11 +30,11 @@ vector<int> SemanticVersionComparator::splitVersion(const string& version) {
 
 bool TimestampVersionComparator::isNewer(const string& remote, const string& local) {
     try {
-        // ½«×Ö·û´®×ª»»ÎªÊ±¼ä´Á
+        // å°†å­—ç¬¦ä¸²è½¬æ¢ä¸ºæ—¶é—´æˆ³
         long remoteTs = parseTimestamp(remote);
         long localTs = parseTimestamp(local);
 
-        // Ö±½Ó±È½ÏÊ±¼ä´ÁÊıÖµ
+        // ç›´æ¥æ¯”è¾ƒæ—¶é—´æˆ³æ•°å€¼
         return remoteTs > localTs;
     }
     catch (const invalid_argument&) {
@@ -47,7 +47,7 @@ long TimestampVersionComparator::parseTimestamp(const string& timestampStr) {
     size_t pos;
     long timestamp = stol(timestampStr, &pos);
 
-    // ¼ì²éÕû¸ö×Ö·û´®ÊÇ·ñ¶¼ÊÇÊı×Ö
+    // æ£€æŸ¥æ•´ä¸ªå­—ç¬¦ä¸²æ˜¯å¦éƒ½æ˜¯æ•°å­—
     if (pos != timestampStr.length()) {
         throw invalid_argument("Invalid timestamp format");
     }

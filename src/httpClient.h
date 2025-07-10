@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <QtCore/QObject>
 #include <QtNetwork/QNetworkReply>
@@ -7,7 +7,7 @@
 #include <QJsonDocument>
 
 
-// ÓĞÔà¶«Î÷¶¨ÒåÁËÃûÎªDELETEµÄºê£¬Îª±£³Ö¸ñÊ½Í³Ò»²Å¼ÓÁËHTTP_Ç°×º
+// æœ‰è„ä¸œè¥¿å®šä¹‰äº†åä¸ºDELETEçš„å®ï¼Œä¸ºä¿æŒæ ¼å¼ç»Ÿä¸€æ‰åŠ äº†HTTP_å‰ç¼€
 enum HTTPMethodType {
 	HTTP_GET,
 	HTTP_POST,
@@ -33,7 +33,7 @@ private:
 	~HTTPClient() = default;
 
 public:
-	// ¾²Ì¬¹¤¾ßº¯Êı£¬²ÎÊıÆ´½Ó³Éurl¸ñÊ½µÄ×Ö·û´®
+	// é™æ€å·¥å…·å‡½æ•°ï¼Œå‚æ•°æ‹¼æ¥æˆurlæ ¼å¼çš„å­—ç¬¦ä¸²
 	static QString agrs_dict_to_urlencoded_string(QHash<QString, QString> args) {
 		QString args_str = "";
 		for (auto it = args.begin(); it != args.end(); ++it) {
@@ -55,14 +55,14 @@ private:
 };
 
 
-// ¸ÃÀàµÄ¶ÔÏóÓ¦¸ÃËæÓÃËæ´´½¨£¬²»ÓÃºóÏú»Ù£¬²»Òª³¤ÆÚ³ÖÓĞ
+// è¯¥ç±»çš„å¯¹è±¡åº”è¯¥éšç”¨éšåˆ›å»ºï¼Œä¸ç”¨åé”€æ¯ï¼Œä¸è¦é•¿æœŸæŒæœ‰
 class HTTPRequest {
 
 public:
 	HTTPRequest(HTTPMethodType http_method, QString url, bool use_default_headers = true);
 	~HTTPRequest() = default;
 
-	// httpÏìÓ¦µÄ»ù±¾ÄÚÈİ£¬Èç¹ûÖ®ºóĞèÒªÀ©Õ¹£¬¼ÌĞøÌí¼Ópublic³ÉÔ±±äÁ¿¼´¿É
+	// httpå“åº”çš„åŸºæœ¬å†…å®¹ï¼Œå¦‚æœä¹‹åéœ€è¦æ‰©å±•ï¼Œç»§ç»­æ·»åŠ publicæˆå‘˜å˜é‡å³å¯
 	HTTPMethodType http_method_type;
 	QString url;
 	QHash<QString, QString> headers;
@@ -71,24 +71,24 @@ public:
 
 	QNetworkRequest create_QNetworkRequest() {
 		QNetworkRequest request;
-		// headers ÉèÖÃ
+		// headers è®¾ç½®
 		for (auto it = this->headers.begin(); it != this->headers.end(); ++it) {
 			request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
 		}
 
-		// ×îÖÕ url (°üº¬url²ÎÊıÆ´½Ó)
+		// æœ€ç»ˆ url (åŒ…å«urlå‚æ•°æ‹¼æ¥)
 		request.setUrl(this->get_final_url());
 
 		return request;
 	}
 
-	// Ä¬ÈÏÊ¹ÓÃµÄheaderÅäÖÃ
+	// é»˜è®¤ä½¿ç”¨çš„headeré…ç½®
 	QHash<QString, QString> get_default_headers() {
 		QHash<QString, QString> default_headers = QHash<QString, QString>();
 		default_headers["Content-Type"] = "application/json";
 		return default_headers;
 	}
-	// ÉèÖÃheader
+	// è®¾ç½®header
 	void set_headers(QHash<QString, QString> new_headers) {
 		this->headers = new_headers;
 	}
@@ -99,7 +99,7 @@ public:
 		this->headers[key] = value;
 	}
 
-	// ÉèÖÃurl²ÎÊı
+	// è®¾ç½®urlå‚æ•°
 	void set_url_args(QHash<QString, QString> new_url_args) {
 		this->url_args = new_url_args;
 	}
@@ -110,7 +110,7 @@ public:
 		this->url_args[key] = value;
 	}
 
-	// ÉèÖÃ payload
+	// è®¾ç½® payload
 	void set_payload(QByteArray byte_array) {
 		this->payload = byte_array;
 	}
@@ -118,7 +118,7 @@ public:
 		this->payload.clear();
 	}
 
-	// ±ã½İº¯Êı£¬´«¶ÔÏóÖ±½ÓÉè³Épayload
+	// ä¾¿æ·å‡½æ•°ï¼Œä¼ å¯¹è±¡ç›´æ¥è®¾æˆpayload
 	void set_payload(QString qstring) {
 		this->payload = qstring.toUtf8();
 	}
@@ -132,12 +132,12 @@ public:
 		this->payload = QJsonDocument(json_array).toJson(QJsonDocument::Compact);
 	}
 
-	// ²é¿´url²ÎÊı
+	// æŸ¥çœ‹urlå‚æ•°
 	QString get_url_args_string() {
 		return HTTPClient::agrs_dict_to_urlencoded_string(this->url_args);
 	}
 
-	// Ò»Ğ©±ã½İº¯Êı£¬¹©Íâ²¿´òÓ¡Debug
+	// ä¸€äº›ä¾¿æ·å‡½æ•°ï¼Œä¾›å¤–éƒ¨æ‰“å°Debug
 	void SimpleDebug() {
 		qDebug() << "";
 		qDebug() << "=====Request=====";
@@ -192,11 +192,11 @@ public:
 	HTTPResponse(QNetworkReply& reply);
 	~HTTPResponse() = default;
 
-	// Î´³É¹¦ÊÕµ½ÏìÓ¦Ê±µÄ´íÎóĞÅÏ¢
+	// æœªæˆåŠŸæ”¶åˆ°å“åº”æ—¶çš„é”™è¯¯ä¿¡æ¯
 	QNetworkReply::NetworkError error_code;
 	QString error_string;
 
-	// httpÏìÓ¦µÄ»ù±¾ÄÚÈİ£¬Èç¹ûÖ®ºóĞèÒªÀ©Õ¹£¬¼ÌĞøÌí¼Ópublic³ÉÔ±±äÁ¿¼´¿É
+	// httpå“åº”çš„åŸºæœ¬å†…å®¹ï¼Œå¦‚æœä¹‹åéœ€è¦æ‰©å±•ï¼Œç»§ç»­æ·»åŠ publicæˆå‘˜å˜é‡å³å¯
 	int status_code;
 	QString reason_phrase;
 	QHash<QString, QString> headers;
@@ -212,24 +212,24 @@ public:
 		this->payload = QByteArray();
 	}
 
-	// ÖØÒª£¡
-	// ¶ÁÈ¡ÈÎºÎ HttpResponse µÄÄÚÈİÇ°£¬Ó¦¸ÃÏÈ½øĞĞ´Ë¼ì²é
-	// ·ñÔò³ÉÔ±±äÁ¿¶Áµ½µÄÊÇ¶ÔÏó¹¹ÔìÊ±µÄÄ¬ÈÏÖµ£¬¶ø·Ç·şÎñÆ÷·¢À´µÄÏìÓ¦Öµ
+	// é‡è¦ï¼
+	// è¯»å–ä»»ä½• HttpResponse çš„å†…å®¹å‰ï¼Œåº”è¯¥å…ˆè¿›è¡Œæ­¤æ£€æŸ¥
+	// å¦åˆ™æˆå‘˜å˜é‡è¯»åˆ°çš„æ˜¯å¯¹è±¡æ„é€ æ—¶çš„é»˜è®¤å€¼ï¼Œè€ŒéæœåŠ¡å™¨å‘æ¥çš„å“åº”å€¼
 	bool is_Valid() {
-		return this->status_code < 1;	// ¹¹ÔìÊ±³õÊ¼ÖµÊÇ-1£¬ÇëÇóÃ»·¢³öÈ¥»òÏìÓ¦Ã»ÊÕµ½ÊÇ0£¬0ÊÇ.toInt()µ¼ÖÂµÄ
+		return this->status_code < 1;	// æ„é€ æ—¶åˆå§‹å€¼æ˜¯-1ï¼Œè¯·æ±‚æ²¡å‘å‡ºå»æˆ–å“åº”æ²¡æ”¶åˆ°æ˜¯0ï¼Œ0æ˜¯.toInt()å¯¼è‡´çš„
 	}
 
-	// ±ã½İº¯Êı£¬ÅĞ¶ÏÏìÓ¦µÄ×´Ì¬ÂëÊÇ·ñÎª200 OK
+	// ä¾¿æ·å‡½æ•°ï¼Œåˆ¤æ–­å“åº”çš„çŠ¶æ€ç æ˜¯å¦ä¸º200 OK
 	bool is_Status_200() {
 		return this->status_code == 200;
 	}
 
-	// ±ã½İº¯Êı£¬ÅĞ¶ÏÏìÓ¦µÄ×´Ì¬ÂëÊÇ·ñÎª2xxÏµÁĞ£¨Restful·ç¸ñµÄ²¿·Öapi¿ÉÄÜÓÃ·Ç200µÄ×´Ì¬Âë±íÊ¾³É¹¦£©
+	// ä¾¿æ·å‡½æ•°ï¼Œåˆ¤æ–­å“åº”çš„çŠ¶æ€ç æ˜¯å¦ä¸º2xxç³»åˆ—ï¼ˆRestfulé£æ ¼çš„éƒ¨åˆ†apiå¯èƒ½ç”¨é200çš„çŠ¶æ€ç è¡¨ç¤ºæˆåŠŸï¼‰
 	bool is_Status_2xx() {
 		return (this->status_code < 300 && this->status_code >= 200);
 	}
 
-	// ±ã½İº¯Êı£¬Ö±½Ó»ñÈ¡payload½âÎöºóµÄ¶ÔÏó
+	// ä¾¿æ·å‡½æ•°ï¼Œç›´æ¥è·å–payloadè§£æåçš„å¯¹è±¡
 	QByteArray get_payload_ByteArray() {
 		return this->payload;
 	}
@@ -256,7 +256,7 @@ public:
 		return json_array;
 	};
 
-	// Ò»Ğ©±ã½İº¯Êı£¬¹©Íâ²¿´òÓ¡Debug
+	// ä¸€äº›ä¾¿æ·å‡½æ•°ï¼Œä¾›å¤–éƒ¨æ‰“å°Debug
 	void SimpleDebug() {
 		qDebug() << "";
 		qDebug() << "=====Response=====";
