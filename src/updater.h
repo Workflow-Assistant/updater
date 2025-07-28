@@ -51,7 +51,7 @@ private:
     //const QString baseUrl = "http://localhost:8000";
 
     // 需要安装包更新的大版本号
-    const std::string installerVersion = "1.0.0";
+    const std::string installerVersion = "2.0.0";
     std::string remoteInstallerVersion;
     std::string installerHash;
 

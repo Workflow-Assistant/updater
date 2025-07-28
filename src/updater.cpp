@@ -51,6 +51,14 @@ void Updater::process() {
 
     // 2. 检查大版本安装包更新
     emit progressChanged(20, "正在比较软件版本...");
+    // 当本地版本号大于远程版本号，表示正在使用特殊版本，不再检查任何更新
+    if (comparator->isNewer(installerVersion, remoteInstallerVersion)) {
+        qDebug() << "Current version is newer than remote version, skipping installer update.";
+        emit launchProgramRequested(QString::fromStdString(mainProgram));
+        emit finished(true, "当前版本已是最新，无需更新。");
+        return;
+    }
+
     if (comparator->isNewer(remoteInstallerVersion, installerVersion)) {
         qDebug() << "New installer version available: "
             << QString::fromStdString(remoteInstallerVersion)
